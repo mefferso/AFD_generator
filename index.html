@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071826">
+  <title>LIX AFD Prompt Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div>
+      <p class="eyebrow">WFO NEW ORLEANS / BATON ROUGE</p>
+      <h1>AFD Prompt Generator</h1>
+      <p class="subhead">Set the forecast window, dump in your notes, and build a research-ready AFD prompt.</p>
+    </div>
+    <div class="header-actions">
+      <span id="saveStatus" class="save-status" role="status">Draft saved locally</span>
+      <button id="clearForm" class="button ghost" type="button">New shift</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form id="afdForm" class="form-column" autocomplete="off">
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="step">01 / VALID TIME</p>
+            <h2>Forecast setup</h2>
+          </div>
+          <button id="setNow" class="button compact" type="button">Use current LIX time</button>
+        </div>
+
+        <div class="grid two">
+          <label>
+            <span>Issuance date and time</span>
+            <input id="issuanceTime" name="issuanceTime" type="datetime-local" required>
+            <small>Interpreted in America/Chicago and fully editable.</small>
+          </label>
+          <label>
+            <span>Desired length</span>
+            <select id="desiredLength" name="desiredLength">
+              <option value="Concise">Concise</option>
+              <option value="Normal" selected>Normal</option>
+              <option value="Normal to detailed">Normal to detailed</option>
+              <option value="Detailed">Detailed</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="period-toolbar">
+          <button id="autoPeriods" class="text-button" type="button">Auto-fill periods from date</button>
+          <span>Default: day 1–3 short term, day 4–7 long term</span>
+        </div>
+        <div class="grid two">
+          <label>
+            <span>Short-term period</span>
+            <input id="shortPeriod" name="shortPeriod" type="text" placeholder="Sunday through Tuesday">
+          </label>
+          <label>
+            <span>Long-term period</span>
+            <input id="longPeriod" name="longPeriod" type="text" placeholder="Wednesday through Saturday">
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="step">02 / PRODUCT</p>
+            <h2>Sections to write</h2>
+          </div>
+        </div>
+
+        <div class="preset-row" aria-label="Section presets">
+          <button class="preset active" type="button" data-preset="full">Full AFD</button>
+          <button class="preset" type="button" data-preset="public">Short + Long</button>
+          <button class="preset" type="button" data-preset="short">Short only</button>
+          <button class="preset" type="button" data-preset="long">Long only</button>
+        </div>
+
+        <div id="sectionChoices" class="choice-grid">
+          <label class="check-tile"><input type="checkbox" name="sections" value="SHORT TERM" checked><span>Short Term</span></label>
+          <label class="check-tile"><input type="checkbox" name="sections" value="LONG TERM" checked><span>Long Term</span></label>
+          <label class="check-tile"><input type="checkbox" name="sections" value="AVIATION" checked><span>Aviation</span></label>
+          <label class="check-tile"><input type="checkbox" name="sections" value="MARINE" checked><span>Marine</span></label>
+          <label class="check-tile"><input type="checkbox" name="sections" value="HYDROLOGY"><span>Hydrology</span></label>
+          <label class="check-tile"><input type="checkbox" name="sections" value="FIRE WEATHER"><span>Fire Weather</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="step">03 / FOCUS</p>
+            <h2>Weather to emphasize</h2>
+          </div>
+          <button id="clearFocus" class="text-button" type="button">Clear</button>
+        </div>
+        <div id="focusChoices" class="chip-grid">
+          <label><input type="checkbox" name="focus" value="Synoptic evolution"><span>Synoptic evolution</span></label>
+          <label><input type="checkbox" name="focus" value="Convection and PoPs"><span>Convection / PoPs</span></label>
+          <label><input type="checkbox" name="focus" value="Severe and downbursts"><span>Severe / downbursts</span></label>
+          <label><input type="checkbox" name="focus" value="Heavy rain and flooding"><span>Heavy rain / flooding</span></label>
+          <label><input type="checkbox" name="focus" value="Heat"><span>Heat</span></label>
+          <label><input type="checkbox" name="focus" value="Fog and low ceilings"><span>Fog / low ceilings</span></label>
+          <label><input type="checkbox" name="focus" value="Gradient winds"><span>Gradient winds</span></label>
+          <label><input type="checkbox" name="focus" value="Coastal flooding and tides"><span>Coastal flooding / tides</span></label>
+          <label><input type="checkbox" name="focus" value="Marine conditions"><span>Marine conditions</span></label>
+          <label><input type="checkbox" name="focus" value="Fire weather"><span>Fire weather</span></label>
+          <label><input type="checkbox" name="focus" value="Cold or winter weather"><span>Cold / winter</span></label>
+          <label><input type="checkbox" name="focus" value="Tropical weather"><span>Tropical</span></label>
+        </div>
+      </section>
+
+      <section class="card notes-card">
+        <div class="section-heading">
+          <div>
+            <p class="step">04 / YOUR INPUT</p>
+            <h2>Forecaster notes</h2>
+            <p class="section-help">These are treated as the highest-priority input. Blank boxes simply disappear from the prompt.</p>
+          </div>
+        </div>
+
+        <label>
+          <span>Short-term concerns and guidance trends</span>
+          <textarea id="shortNotes" name="shortNotes" rows="6" placeholder="Pattern evolution, timing, PoP trends, temps, soundings, CAM signals, confidence..."></textarea>
+        </label>
+        <label>
+          <span>Long-term concerns and guidance trends</span>
+          <textarea id="longNotes" name="longNotes" rows="6" placeholder="Day-to-day pattern changes, ensemble trends, fronts, temps, PoPs, uncertainty..."></textarea>
+        </label>
+        <div class="grid two textarea-grid">
+          <label>
+            <span>Aviation</span>
+            <textarea id="aviationNotes" name="aviationNotes" rows="4" placeholder="Ceilings, visibility, convection timing, wind shifts, terminals..."></textarea>
+          </label>
+          <label>
+            <span>Marine and coastal</span>
+            <textarea id="marineNotes" name="marineNotes" rows="4" placeholder="Winds/seas, convection, tides, coastal flooding, lakes and sounds..."></textarea>
+          </label>
+        </div>
+        <div class="grid two textarea-grid">
+          <label>
+            <span>Hazards, messaging, and coordination</span>
+            <textarea id="hazardNotes" name="hazardNotes" rows="4" placeholder="Near-threshold hazards, current headlines, partner concerns, coordination..."></textarea>
+          </label>
+          <label>
+            <span>Confidence, alternatives, and bust risks</span>
+            <textarea id="confidenceNotes" name="confidenceNotes" rows="4" placeholder="What could change the forecast? Where is confidence lowest?"></textarea>
+          </label>
+        </div>
+        <label>
+          <span>Additional instructions</span>
+          <textarea id="extraInstructions" name="extraInstructions" rows="3" placeholder="Anything unique for this AFD—phrasing, exclusions, emphasis, coordination context..."></textarea>
+        </label>
+      </section>
+
+      <section class="card alerts-card">
+        <div class="section-heading">
+          <div>
+            <p class="step">05 / LIVE CHECK</p>
+            <h2>Current LIX hazards</h2>
+          </div>
+          <button id="refreshAlerts" class="button compact" type="button">Refresh hazards</button>
+        </div>
+        <div id="alertStatus" class="alert-status" aria-live="polite">Checking api.weather.gov…</div>
+        <div id="activeAlerts" class="active-alerts"></div>
+        <label class="inline-check">
+          <input id="includeAlerts" name="includeAlerts" type="checkbox" checked>
+          <span>Include this live snapshot in the generated prompt</span>
+        </label>
+      </section>
+
+      <section class="card generate-card">
+        <div>
+          <p class="step">06 / BUILD</p>
+          <h2>Ready to generate</h2>
+          <p>The finished prompt includes your choices, notes, research rules, writing style, and all LIX hazard thresholds below.</p>
+        </div>
+        <button id="generatePrompt" class="button primary" type="submit">Generate AFD prompt</button>
+      </section>
+
+      <section id="outputSection" class="card output-card" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="step">OUTPUT</p>
+            <h2>Your AFD prompt</h2>
+          </div>
+          <div class="output-actions">
+            <button id="copyPrompt" class="button primary compact" type="button">Copy prompt</button>
+            <button id="downloadPrompt" class="button compact" type="button">Download .txt</button>
+          </div>
+        </div>
+        <textarea id="promptOutput" rows="24" spellcheck="false" aria-label="Generated AFD prompt"></textarea>
+        <p id="copyStatus" class="copy-status" role="status"></p>
+      </section>
+    </form>
+
+    <aside class="criteria-column">
+      <section class="card sticky-card">
+        <div class="criteria-header">
+          <div>
+            <p class="step">LIX QUICK REFERENCE</p>
+            <h2>Hazard criteria</h2>
+          </div>
+          <span class="verified-badge">Verified Sep 6, 2026</span>
+        </div>
+        <p class="criteria-intro">These thresholds are automatically embedded in every prompt so near-criteria conditions get called out.</p>
+        <div id="criteriaList" class="criteria-list"></div>
+        <a class="source-link" href="https://www.weather.gov/lix/wwa_criteria" target="_blank" rel="noreferrer">Official LIX criteria source ↗</a>
+        <p class="criteria-note">Operational policy and active products always control. The generator tells ChatGPT to verify current criteria and coordination before recommending headlines.</p>
+      </section>
+    </aside>
+  </main>
+
+  <footer>
+    <span>Runs entirely in your browser. No server. No login. No weather notes leave the page.</span>
+    <a href="https://github.com/mefferso/AFD_generator" target="_blank" rel="noreferrer">View repository ↗</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
