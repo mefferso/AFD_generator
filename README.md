@@ -21,9 +21,11 @@ The site is entirely client-side. It has no backend and sends no entered forecas
 
 ## GitHub Pages
 
-In repository **Settings → Pages**, choose **Deploy from a branch**, then select **main** and **/(root)**. The site will be available at:
+The included GitHub Actions workflow enables and deploys Pages from `main`. The site will be available at:
 
 `https://mefferso.github.io/AFD_generator/`
+
+If the workflow reports that Pages cannot be enabled, the private repository is not eligible under the account's current GitHub plan. Either change the repository visibility to public or enable a GitHub plan that supports Pages for private repositories, then rerun **Deploy GitHub Pages** under the repository's **Actions** tab.
 
 ## Hazard criteria source
 
