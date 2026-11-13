@@ -58,7 +58,7 @@
     if(field==="Wind"||field==="Gust"){
       if(/km_h|km\/h/i.test(u))return v*.621371;
       if(/m_s-1|m\/s/i.test(u))return v*2.236936;
-      if(/kn|knot/i.test(u))return v*1.150779;
+      if(/(?:^|:)(?:kn|knot|knots)$/i.test(u))return v*1.150779;
       if(/mi_h|mph/i.test(u))return v;
     }
     return null;
