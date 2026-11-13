@@ -198,8 +198,46 @@
     return findings.length?findings:[{level:"review",claim:"No explicit PoP ranges identified",sentence:"",
       explanation:"Audit checks explicit PoP ranges only. It cannot certify every numeric or spatial claim."}];
   }
+
+  // Best-effort inventory of other explicit physical-number claims. A text
+  // scanner cannot prove spatial validity or decode qualitative ranges.
+  function auditOtherNumerics(draft,manualRows){
+    const text=String(draft||"").split(/FORECASTER CHECK/i)[0];
+    const sentences=text.split(/(?<=[.!?])\s+|\n+/).filter(Boolean);
+    const dates=[...new Set((manualRows||[]).map(r=>r.date))];
+    const weekday=d=>new Date(d+"T12:00:00Z").toLocaleDateString("en-US",{weekday:"long",timeZone:"UTC"});
+    const findings=[];
+    for(const sentence of sentences){
+      const matcher=/\b(\d{1,3}(?:\.\d+)?)\s*(?:(?:-|–|—|to)\s*(\d{1,3}(?:\.\d+)?))?\s*(°F|degrees?|mph|knots?|kt|%|percent)/gi;
+      let m;
+      while((m=matcher.exec(sentence))){
+        const unit=m[3].toLowerCase();
+        let field=null;
+        if(/dew\s*point/i.test(sentence))field="Dewpoint";
+        else if(/relative humidity|\bRH\b|humidity/i.test(sentence)&&/%|percent/.test(unit))field="RH";
+        else if(/gust/i.test(sentence)&&/mph|knots?|kt/.test(unit))field="Gust";
+        else if(/\bwinds?\b/i.test(sentence)&&/mph|knots?|kt/.test(unit))field="Wind";
+        else if(/temperature|highs?\b|lows?\b/i.test(sentence)&&/°f|degree/.test(unit))field="Temp";
+        if(!field)continue;
+        const date=dates.find(d=>new RegExp("\\b"+weekday(d)+"\\b","i").test(sentence));
+        const options=(manualRows||[]).filter(r=>r.date===date&&r.field===field);
+        const min=+m[1],max=m[2]===undefined?min:+m[2];
+        const unitsAgree=field==="RH"?/%|percent/.test(unit):
+          ["Temp","Dewpoint"].includes(field)?/°f|degree/.test(unit):unit==="mph";
+        const matched=unitsAgree&&options.some(r=>r.min===min&&r.max===max);
+        const level=!options.length||!unitsAgree?"review":matched?"matched":"conflict";
+        const explanation=!options.length?"No same-date structured AWIPS "+field+" range; verify against source and valid period.":
+          !unitsAgree?"Different or ambiguous units; manually check conversion and location.":
+          matched?"Numerically matches supplied AWIPS "+field+" range; verify area/time.":
+          "Does not match supplied "+date+" AWIPS "+field+" range(s): "+options.map(r=>r.min+"–"+r.max+" ("+r.area+")").join(", ")+". Check geography and timing.";
+        findings.push({level,claim:m[0],sentence:sentence.trim().slice(0,240),explanation});
+      }
+    }
+    return findings;
+  }
+
   const api={CENTRAL,POINTS,FIELDS,centralDay,selectedDays,parseValidTime,daysOverlapping,
-    convert,summarizeGrid,rangeText,fetchNwsSamples,parseOverrides,manualText,snapshotText,auditDraft};
+    convert,summarizeGrid,rangeText,fetchNwsSamples,parseOverrides,manualText,snapshotText,auditDraft,auditOtherNumerics};
   if(typeof module!=="undefined"&&module.exports)module.exports=api;
   root.ForecastData=api;
 })(typeof globalThis!=="undefined"?globalThis:this);
