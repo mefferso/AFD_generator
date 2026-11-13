@@ -18,6 +18,10 @@ async function runTests() {
   check(grid.auditDraft("Monday PoPs 30 to 60 percent.", rows.rows)[0].level === "matched", "accept entered 30–60");
   check(grid.auditDraft("Monday PoPs 20–40%.", rows.rows)[0].level === "conflict", "catch symbol range");
   check(grid.auditDraft("Monday PoPs 20–40%.", [])[0].level === "review", "flag unverified figures");
+  const otherRows = grid.parseOverrides("2026-11-16 | Wind | 15 | 20 | LIX CWA\n2026-11-16 | RH | 20 | 25 | LIX CWA").rows;
+  const other = grid.auditOtherNumerics("Monday winds 25 to 30 mph and humidity 20–25%.", otherRows);
+  check(other.some(x => x.level === "conflict" && x.claim.includes("25 to 30")), "flag wind mismatch");
+  check(other.some(x => x.level === "matched" && x.claim.includes("20–25")), "find RH match");
   check(grid.snapshotText(null).includes("NO VERIFIED"), "grid unavailable is not fabricated");
 
   const mockGrid = {
