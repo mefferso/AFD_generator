@@ -214,3 +214,25 @@ footer a { color: #8cbfd9; text-decoration: none; }
   .generate-card .button { width: 100%; }
   .output-actions { flex-wrap: wrap; justify-content: end; }
 }
+
+
+/* Verified public grids / manual forecaster values */
+.forecast-data-card .section-heading { margin-bottom: 14px; }
+.grid-details { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; }
+.grid-details summary { color: var(--blue); cursor: pointer; font-size: .82rem; font-weight: 750; }
+.grid-preview { white-space: pre-wrap; overflow: auto; max-height: 340px; margin: 12px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.55; }
+.awips-label { display: block; margin-top: 20px; }
+.awips-label small { display: block; margin: 5px 0 8px; color: var(--muted); }
+#awipsOverrides { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+#awipsStatus { margin-top: 10px; }
+.audit-section { border-top: 1px solid var(--border); margin-top: 20px; padding-top: 18px; }
+.audit-section h3 { margin: 0 0 6px; }
+.audit-section p { color: var(--muted); font-size: .79rem; }
+#draftToAudit { width: 100%; }
+.audit-section button { margin-top: 9px; }
+.audit-results { margin-top: 12px; }
+.audit-finding { border: 1px solid var(--border); border-left: 3px solid var(--gold); border-radius: 8px; padding: 10px; margin-top: 9px; }
+.audit-finding strong, .audit-finding span { display: block; font-size: .75rem; }
+.audit-finding span { margin-top: 4px; color: var(--muted); }
+.audit-conflict { border-left-color: var(--red); }
+.audit-matched { border-left-color: var(--green); }
