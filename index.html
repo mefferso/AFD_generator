@@ -156,10 +156,36 @@
         </label>
       </section>
 
+      <section class="card forecast-data-card">
+        <div class="section-heading">
+          <div>
+            <p class="step">05 / VERIFIED FORECAST DATA</p>
+            <h2>NWS grids &amp; AWIPS priority</h2>
+            <p class="section-help">Public NWS forecast-grid samples load automatically. They may lag current AWIPS/GFE edits and are NOT full-CWA minima/maxima or daily PoPs.</p>
+          </div>
+          <button id="refreshGrids" class="button compact" type="button">Refresh grids</button>
+        </div>
+        <div id="gridStatus" class="alert-status" aria-live="polite">Awaiting public forecast data…</div>
+        <details class="grid-details">
+          <summary>Show dates, sampled point values, sources &amp; update times</summary>
+          <pre id="gridPreview" class="grid-preview"></pre>
+        </details>
+        <label class="inline-check">
+          <input id="includeGridData" name="includeGridData" type="checkbox" checked>
+          <span>Include sourced public-grid samples in my AFD prompt</span>
+        </label>
+        <label class="awips-label" for="awipsOverrides">
+          <span>My AWIPS/GFE forecast values (override older public grid data)</span>
+          <small>One entry per line: YYYY-MM-DD | PoP | minimum | maximum | area. Also supports Temp, Dewpoint, RH, Wind, Gust. Use real forecast values only.</small>
+        </label>
+        <textarea id="awipsOverrides" name="awipsOverrides" rows="4" spellcheck="false" placeholder="2026-11-16 | PoP | 30 | 60 | LIX CWA"></textarea>
+        <div id="awipsStatus" class="alert-status" aria-live="polite"></div>
+      </section>
+
       <section class="card alerts-card">
         <div class="section-heading">
           <div>
-            <p class="step">05 / LIVE CHECK</p>
+            <p class="step">06 / LIVE CHECK</p>
             <h2>Current LIX hazards</h2>
           </div>
           <button id="refreshAlerts" class="button compact" type="button">Refresh hazards</button>
@@ -174,7 +200,7 @@
 
       <section class="card generate-card">
         <div>
-          <p class="step">06 / BUILD</p>
+          <p class="step">07 / BUILD</p>
           <h2>Ready to generate</h2>
           <p>The finished prompt includes your choices, notes, research rules, writing style, and all LIX hazard thresholds below.</p>
         </div>
@@ -194,6 +220,14 @@
         </div>
         <textarea id="promptOutput" rows="24" spellcheck="false" aria-label="Generated AFD prompt"></textarea>
         <p id="copyStatus" class="copy-status" role="status"></p>
+        <div class="audit-section">
+          <h3>Post-draft PoP check</h3>
+          <p>Paste the generated AFD back here to compare explicit, weekday-labeled PoP ranges against structured AWIPS values. This is a preliminary check, not a full numerical audit.</p>
+          <textarea id="draftToAudit" rows="9" spellcheck="false" placeholder=".LONG TERM... Monday PoPs range from 30 to 60%..."></textarea>
+          <button id="runAudit" class="button compact" type="button">Audit draft PoPs</button>
+          <div id="auditResults" class="audit-results" aria-live="polite"></div>
+        </div>
+
       </section>
     </form>
 
@@ -219,6 +253,7 @@
     <a href="https://github.com/mefferso/AFD_generator" target="_blank" rel="noreferrer">View repository ↗</a>
   </footer>
 
+  <script src="forecast-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
