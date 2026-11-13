@@ -180,7 +180,7 @@
     const findings=[];
     for(const sentence of sentences){
       if(!/\b(pop|pops|rain chances|precipitation chances|chance of rain|chance of precipitation)\b/i.test(sentence))continue;
-      const re=/\b(\d{1,3})\s*(?:-|–|—|to)\s*(\d{1,3})\s*%/g;
+      const re=/\b(\d{1,3})\s*(?:-|–|—|to)\s*(\d{1,3})\s*(?:%|percent\b)/gi;
       let m;
       while((m=re.exec(sentence))){
         const day=dates.find(d=>new RegExp("\\b"+weekday(d)+"\\b","i").test(sentence));
