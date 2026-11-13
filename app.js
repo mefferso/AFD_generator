@@ -375,9 +375,9 @@ function auditDraftUI() {
   const text=document.querySelector("#draftToAudit").value.trim();
   if(!text){out.textContent="Paste an AFD draft first.";return;}
   const intro=document.createElement("p");
-  intro.textContent="Preliminary explicit PoP-range comparison only. This is NOT a full numerical, geographic, or source audit; manually verify all remaining claims.";
+  intro.textContent="Preliminary numeric-claim inventory: PoP, temperature, RH and wind figures are compared with dated AWIPS entries when available. This is NOT a complete meteorological or spatial validation. Manually verify other values and sources.";
   out.append(intro);
-  for(const finding of ForecastData.auditDraft(text,parsed.rows)){
+  for(const finding of ForecastData.auditDraft(text,parsed.rows).concat(ForecastData.auditOtherNumerics(text,parsed.rows))){
     const item=document.createElement("div"),heading=document.createElement("strong"),detail=document.createElement("span");
     item.className="audit-finding audit-"+finding.level;
     heading.textContent=finding.level.toUpperCase()+": "+finding.claim;
@@ -448,6 +448,8 @@ function resetForNewShift() {
   localStorage.removeItem(STORAGE_KEY);
   saveForm();
   fetchAlerts();
+  validateAwips();
+  fetchGrids();
   document.querySelector("#shortNotes").focus();
 }
 
@@ -515,6 +517,7 @@ if (hasDocument) {
   document.querySelector("#setNow").addEventListener("click", () => {
   document.querySelector("#issuanceTime").value = centralInputValue();
   fillPeriods();
+  fetchGrids();
   });
   document.querySelector("#autoPeriods").addEventListener("click", fillPeriods);
   document.querySelector("#clearForm").addEventListener("click", () => {
