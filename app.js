@@ -98,6 +98,8 @@ Use the newest available official or primary meteorological information whenever
 
 Clearly distinguish observed conditions, model forecasts, and meteorological inference. Do not invent or assume observations, model output, probabilities, hazards, headlines, or office coordination. Leave unverifiable details out or describe the uncertainty honestly.`;
 
+const NUMERICAL_RULES = "MANDATORY NUMERICAL DATA GATE: Read the dated forecaster AWIPS/GFE values and the sourced NWS grid samples BEFORE drafting. Forecaster AWIPS/GFE values supersede older public grids. Model guidance is evidence, not a silent replacement for official PoPs. Never invent numerical PoPs, temperatures, winds, QPF, model sounding parameters or other values. Missing or null values are not zero. The raw NWS figures are samples at native valid-time intervals, not CWA-wide extrema or daily PoPs. Never sum, average or extrapolate sampled precipitation probabilities. Check local dates, valid periods, units, point locations, and update times; old dissemination may lag AWIPS. Before finalizing, cross-check EVERY numerical claim against an actual source or explicit forecaster input. Omit unsupported numbers and flag missing, stale, or conflicting data in Forecaster Check. Keep references out of the operational AFD.";
+
 const ANALYSIS_RULES = `Write the SHORT TERM and LONG TERM discussions chronologically. Within each time period, connect the evolving synoptic/mesoscale pattern directly to temperatures, PoPs, convection, hazards, and impacts. Do not split each weather element into a separate topic paragraph when a chronological narrative is clearer.
 
 Focus on timing, location, meaningful spatial differences across the CWA, forecast confidence, reasonable alternative scenarios, reasons behind forecast changes, and supported impacts. Give extra attention when warranted to the New Orleans and Baton Rouge metro areas, coastal Louisiana, the Mississippi Gulf Coast, tidal lakes, and adjacent marine zones.
@@ -124,6 +126,9 @@ const activeAlerts = hasDocument ? document.querySelector("#activeAlerts") : nul
 let liveAlerts = [];
 let alertsLastChecked = null;
 let alertsSucceeded = false;
+let gridSnapshot = null;
+let gridIssuedDate = null;
+let gridRequestId = 0;
 let saveTimer;
 
 function centralParts(date = new Date()) {
@@ -252,6 +257,14 @@ Treat these notes as the highest-priority input. Use external research to supple
 
 ${noteSections}
 
+## FORECASTER AWIPS/GFE VALUES — HIGHEST NUMERICAL PRIORITY
+
+${config.awipsText || "No structured AWIPS/GFE values supplied."}
+
+## PUBLIC NWS RAW-GRID POINT SAMPLES — LOWER PRIORITY THAN AWIPS
+
+${config.gridSnapshotText || "No verified public grid values supplied. Do not invent values."}
+
 ## CURRENT LIX HAZARD SNAPSHOT
 
 ${config.alertSnapshot || "Independently verify all current LIX hazards before drafting."}
@@ -267,6 +280,8 @@ Draft only these selected sections, in this order when selected: SHORT TERM, LON
 ## RESEARCH AND SOURCE PRIORITIES
 
 ${BASE_RESEARCH}
+
+${NUMERICAL_RULES}
 
 ## FORECAST ANALYSIS REQUIREMENTS
 
@@ -311,8 +326,64 @@ function buildPrompt() {
       confidence: document.querySelector("#confidenceNotes").value,
       extra: document.querySelector("#extraInstructions").value
     },
-    alertSnapshot: liveAlertText()
+    alertSnapshot: liveAlertText(),
+    awipsText: ForecastData.manualText(ForecastData.parseOverrides(document.querySelector("#awipsOverrides").value).rows),
+    gridSnapshotText: document.querySelector("#includeGridData").checked && gridSnapshot && gridIssuedDate === document.querySelector("#issuanceTime").value.slice(0,10)
+      ? ForecastData.snapshotText(gridSnapshot) : "No verified grid data included. Use qualitative wording for unsupported numerical values."
   });
+}
+
+
+function validateAwips() {
+  const result=ForecastData.parseOverrides(document.querySelector("#awipsOverrides").value);
+  const el=document.querySelector("#awipsStatus");
+  el.className=result.errors.length?"alert-status error":"alert-status";
+  el.textContent=result.errors.length?result.errors.join(" | "):
+    result.rows.length+" structured AWIPS value(s) take priority over public-grid samples.";
+  return result;
+}
+async function fetchGrids(){
+  const val=document.querySelector("#issuanceTime").value;
+  const id=++gridRequestId,button=document.querySelector("#refreshGrids"),status=document.querySelector("#gridStatus");
+  gridSnapshot=null;gridIssuedDate=null;button.disabled=true;
+  status.className="alert-status";status.textContent="Retrieving public NWS raw grids…";
+  document.querySelector("#gridPreview").textContent="";
+  try{
+    const snap=await ForecastData.fetchNwsSamples(fetch,val,(done,total)=>{
+      if(gridRequestId===id)status.textContent="Checked "+done+"/"+total+" sample points…";
+    });
+    if(gridRequestId!==id)return;
+    gridSnapshot=snap;gridIssuedDate=val.slice(0,10);
+    const valid=snap.locations.map(p=>Date.parse(p.updatedAt)).filter(Number.isFinite);
+    const oldest=valid.length?Math.min(...valid):null;
+    const hours=oldest===null?null:(Date.now()-oldest)/3600000;
+    status.className=hours===null||hours>8||snap.failures.length?"alert-status error":"alert-status";
+    status.textContent=snap.locations.length+"/"+ForecastData.POINTS.length+" sampled gridpoints; "+snap.failures.length+
+      " failed. Oldest published update: "+(oldest===null?"unknown":new Date(oldest).toLocaleString("en-US",{timeZone:"America/Chicago",timeZoneName:"short"}))+
+      (hours===null?"":", "+Math.round(hours)+"h old")+
+      (hours===null||hours>8?". Verify freshness against AWIPS.":"")+
+      " Point/native-interval samples — NOT CWA-wide or daily PoPs.";
+    document.querySelector("#gridPreview").textContent=ForecastData.snapshotText(snap);
+  }catch(e){
+    if(gridRequestId===id){status.className="alert-status error";status.textContent="Grid retrieval failed: "+e.message+". Numerical estimation prohibited.";}
+  }finally{if(gridRequestId===id)button.disabled=false;}
+}
+function auditDraftUI() {
+  const parsed=validateAwips(),out=document.querySelector("#auditResults");
+  out.replaceChildren();
+  if(parsed.errors.length){out.textContent=parsed.errors.join(" | ");return;}
+  const text=document.querySelector("#draftToAudit").value.trim();
+  if(!text){out.textContent="Paste an AFD draft first.";return;}
+  const intro=document.createElement("p");
+  intro.textContent="Preliminary explicit PoP-range comparison only. This is NOT a full numerical, geographic, or source audit; manually verify all remaining claims.";
+  out.append(intro);
+  for(const finding of ForecastData.auditDraft(text,parsed.rows)){
+    const item=document.createElement("div"),heading=document.createElement("strong"),detail=document.createElement("span");
+    item.className="audit-finding audit-"+finding.level;
+    heading.textContent=finding.level.toUpperCase()+": "+finding.claim;
+    detail.textContent=finding.explanation+(finding.sentence?" | "+finding.sentence:"");
+    item.append(heading,detail);out.append(item);
+  }
 }
 
 function serializeForm() {
@@ -434,6 +505,7 @@ if (hasDocument) {
     document.querySelector("#sectionChoices").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+  if (validateAwips().errors.length) { document.querySelector("#awipsOverrides").focus(); return; }
   output.value = buildPrompt();
   outputSection.hidden = false;
   outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -454,6 +526,10 @@ if (hasDocument) {
   });
   document.querySelectorAll(".preset").forEach(button => button.addEventListener("click", () => setSectionPreset(button.dataset.preset)));
   document.querySelector("#refreshAlerts").addEventListener("click", fetchAlerts);
+  document.querySelector("#refreshGrids").addEventListener("click", fetchGrids);
+  document.querySelector("#awipsOverrides").addEventListener("input", validateAwips);
+  document.querySelector("#runAudit").addEventListener("click", auditDraftUI);
+  document.querySelector("#issuanceTime").addEventListener("change", fetchGrids);
   document.querySelector("#copyPrompt").addEventListener("click", async () => {
   const status = document.querySelector("#copyStatus");
   try {
@@ -484,6 +560,8 @@ if (hasDocument) {
     fillPeriods();
   }
   fetchAlerts();
+  validateAwips();
+  fetchGrids();
 }
 
 // Expose pure helpers for lightweight automated tests without affecting the page.
